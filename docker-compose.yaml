@@ -10,11 +10,6 @@ services:
     restart: unless-stopped
     env_file:
       - .env  # Path to code-server .env
-    environment:
-      - PASSWORD=${PASSWORD}
-      - USER_ID=${USER_ID}
-      - GROUP_ID=${GROUP_ID}
-      - USER_NAME=${USER_NAME:-coder}
     volumes:
       - code-server-data:/opt/code-server:rw
       - ./models:/opt/comfyui/models:rw
