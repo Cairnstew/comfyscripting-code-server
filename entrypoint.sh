@@ -83,9 +83,22 @@ then
 else
     echo "[entry.sh] Creating non-root user..."
 
-    echo "[entry.sh] GROUP_ID: $GROUP_ID"
-    echo "[entry.sh] USER_ID: $USER_ID"
+    # DEBUG: Print variable values
+    echo "[entry.sh] GROUP_ID: '${GROUP_ID}'"
+    echo "[entry.sh] USER_ID: '${USER_ID}'"
 
+    # Check if GROUP_ID and USER_ID are set
+    if [[ -z "$GROUP_ID" ]]; then
+        echo "[entry.sh] ERROR: GROUP_ID is not set."
+        exit 1
+    fi
+
+    if [[ -z "$USER_ID" ]]; then
+        echo "[entry.sh] ERROR: USER_ID is not set."
+        exit 1
+    fi
+
+    # Create group if it doesn't exist
     if getent group "$GROUP_ID" > /dev/null 2>&1; then
         echo "[entry.sh] Group $GROUP_ID already exists."
     else
@@ -93,6 +106,7 @@ else
         groupadd --gid "$GROUP_ID" comfyui-user
     fi
 
+    # Create user if it doesn't exist
     if id -u "$USER_ID" > /dev/null 2>&1; then
         echo "[entry.sh] User $USER_ID already exists."
     else
