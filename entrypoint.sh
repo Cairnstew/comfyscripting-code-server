@@ -54,17 +54,23 @@ done
 # --- PRE-START LOGIC ---
 echo "[wrapper] Checking for ComfyScript node..."
 
-CUSTOM_NODE_DIR="/opt/comfyui/custom_nodes/ComfyScript"
+# Save current directory
+ORIGINAL_DIR="$(pwd)"
 
-if [ ! -d "$CUSTOM_NODE_DIR" ]; then
-  echo "[wrapper] Cloning ComfyScript..."
-  git clone https://github.com/Chaoses-Ib/ComfyScript.git "$CUSTOM_NODE_DIR"
+# Navigate to the target directory
+cd ComfyUI/custom_nodes
 
-  echo "[wrapper] Installing ComfyScript in editable mode..."
-  python -m pip install -e "$CUSTOM_NODE_DIR\[default]"
+# Clone only if it doesn't exist
+if [ ! -d "ComfyScript" ]; then
+    git clone https://github.com/Chaoses-Ib/ComfyScript.git
+    cd ComfyScript
+    python -m pip install -e ".[default]"
 else
-  echo "[wrapper] ComfyScript already exists, skipping clone."
+    echo "ComfyScript already exists, skipping clone and install."
 fi
+
+# Return to original directory
+cd "$ORIGINAL_DIR"
 
 # Under normal circumstances, the container would be run as the root user, which is not ideal, because the files that are created by the container in
 # the volumes mounted from the host, i.e., custom nodes and models downloaded by the ComfyUI Manager, are owned by the root user; the user can specify
