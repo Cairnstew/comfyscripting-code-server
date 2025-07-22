@@ -75,35 +75,33 @@ then
     echo "Running container as $USER..."
     exec "$@"
 else
-    echo "Creating non-root user..."
+    echo "[entry.sh] Creating non-root user..."
 
-    echo "Checking if group $GROUP_ID exists..."
+    echo "[entry.sh] GROUP_ID: $GROUP_ID"
+    echo "[entry.sh] USER_ID: $USER_ID"
+
     if getent group "$GROUP_ID" > /dev/null 2>&1; then
-        echo "Group $GROUP_ID already exists."
+        echo "[entry.sh] Group $GROUP_ID already exists."
     else
-        echo "Group $GROUP_ID does not exist. Creating group $USER_NAME with GID $GROUP_ID..."
-        groupadd --gid "$GROUP_ID" "$USER_NAME" || { echo "Failed to create group."; exit 1; }
+        echo "[entry.sh] Creating group comfyui-user with GID $GROUP_ID..."
+        groupadd --gid "$GROUP_ID" comfyui-user
     fi
 
-    echo "Checking if user $USER_ID exists..."
     if id -u "$USER_ID" > /dev/null 2>&1; then
-        echo "User $USER_ID already exists."
+        echo "[entry.sh] User $USER_ID already exists."
     else
-        echo "User $USER_ID does not exist. Creating user $USER_NAME with UID $USER_ID..."
-        useradd --uid "$USER_ID" --gid "$GROUP_ID" --create-home "$USER_NAME" || { echo "Failed to create user."; exit 1; }
+        echo "[entry.sh] Creating user comfyui-user with UID $USER_ID and GID $GROUP_ID..."
+        useradd --uid "$USER_ID" --gid "$GROUP_ID" --create-home comfyui-user
     fi
 
-    echo "Changing ownership of /opt/comfyui to $USER_ID:$GROUP_ID..."
-    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui || { echo "chown failed on /opt/comfyui"; exit 1; }
+    echo "[entry.sh] Changing ownership of /opt/comfyui and /opt/comfyui-manager..."
+    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui
+    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui-manager
 
-    echo "Changing ownership of /opt/comfyui-manager to $USER_ID:$GROUP_ID..."
-    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui-manager || { echo "chown failed on /opt/comfyui-manager"; exit 1; }
+    export PATH=$PATH:/home/comfyui-user/.local/bin
+    echo "[entry.sh] PATH: $PATH"
 
-    echo "Appending local bin to PATH for $USER_NAME..."
-    export PATH="$PATH:/home/$USER_NAME/.local/bin"
-
-    echo "Final PATH: $PATH"
-    echo "Running container as $USER_NAME (UID: $USER_ID)..."
-    exec sudo --set-home --preserve-env=PATH --user "#$USER_ID" "$@" || { echo "Failed to switch user."; exit 1; }
+    echo "[entry.sh] Running container as user ID $USER_ID..."
+    sudo --set-home --preserve-env=PATH --user "#$USER_ID" "$@"
 fi
 
