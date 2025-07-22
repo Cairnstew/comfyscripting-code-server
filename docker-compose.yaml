@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  comfy-code:
+    build:
+      context: .  # Adjust if Dockerfile is in a different directory
+      dockerfile: Dockerfile
+    image: seanstrcairns/comfyscripting-code-server:latest
+    container_name: comfy-code-dev
+    restart: unless-stopped
+    env_file:
+      - .env  # Path to code-server .env
+    environment:
+      - PASSWORD=${PASSWORD}
+      - USER_ID=${USER_ID}
+      - GROUP_ID=${GROUP_ID}
+      - USER_NAME=${USER_NAME:-coder}
+    volumes:
+      - code-server-data:/opt/code-server:rw
+      - ./models:/opt/comfyui/models:rw
+      - ./custom_nodes:/opt/comfyui/custom_nodes:rw
+    ports:
+      - "8188:8188"         # ComfyUI
+      - "8080:8080"         # code-server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: cdi
+            capabilities:
+              - gpu
+            device_ids:
+              - nvidia.com/gpu=all
+
+volumes:
+  code-server-data:
