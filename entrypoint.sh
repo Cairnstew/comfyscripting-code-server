@@ -76,13 +76,34 @@ then
     exec "$@"
 else
     echo "Creating non-root user..."
-    getent group $GROUP_ID > /dev/null 2>&1 || groupadd --gid $GROUP_ID $USER_NAME
-    id -u $USER_ID > /dev/null 2>&1 || useradd --uid $USER_ID --gid $GROUP_ID --create-home $USER_NAME
-    chown --recursive $USER_ID:$GROUP_ID /opt/comfyui
-    chown --recursive $USER_ID:$GROUP_ID /opt/comfyui-manager
-    export PATH=$PATH:/home/$USER_NAME.local/bin
 
-    echo "Running container as $USER..."
-    sudo --set-home --preserve-env=PATH --user \#$USER_ID "$@"
+    echo "Checking if group $GROUP_ID exists..."
+    if getent group "$GROUP_ID" > /dev/null 2>&1; then
+        echo "Group $GROUP_ID already exists."
+    else
+        echo "Group $GROUP_ID does not exist. Creating group $USER_NAME with GID $GROUP_ID..."
+        groupadd --gid "$GROUP_ID" "$USER_NAME" || { echo "Failed to create group."; exit 1; }
+    fi
+
+    echo "Checking if user $USER_ID exists..."
+    if id -u "$USER_ID" > /dev/null 2>&1; then
+        echo "User $USER_ID already exists."
+    else
+        echo "User $USER_ID does not exist. Creating user $USER_NAME with UID $USER_ID..."
+        useradd --uid "$USER_ID" --gid "$GROUP_ID" --create-home "$USER_NAME" || { echo "Failed to create user."; exit 1; }
+    fi
+
+    echo "Changing ownership of /opt/comfyui to $USER_ID:$GROUP_ID..."
+    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui || { echo "chown failed on /opt/comfyui"; exit 1; }
+
+    echo "Changing ownership of /opt/comfyui-manager to $USER_ID:$GROUP_ID..."
+    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui-manager || { echo "chown failed on /opt/comfyui-manager"; exit 1; }
+
+    echo "Appending local bin to PATH for $USER_NAME..."
+    export PATH="$PATH:/home/$USER_NAME/.local/bin"
+
+    echo "Final PATH: $PATH"
+    echo "Running container as $USER_NAME (UID: $USER_ID)..."
+    exec sudo --set-home --preserve-env=PATH --user "#$USER_ID" "$@" || { echo "Failed to switch user."; exit 1; }
 fi
 
