@@ -31,9 +31,9 @@ cp .env.example .env
 Edit `.env` to include:
 ```bash
 PASSWORD=your_secure_password
-USER_ID=$(id -u)
-GROUP_ID=$(id -g)
-USER_NAME=$(whoami)
+USER_ID=1000
+GROUP_ID=1000
+USER_NAME=my_user
 ```
 Replace `your_secure_password` with a strong password for code-server access.
 
