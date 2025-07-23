@@ -20,11 +20,6 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Ensure the working directory is set (will create if it doesn't exist)
 WORKDIR /opt/code-server
 
-# --- Download Extensions ---
-RUN code-server --install-extension ms-python.python
-RUN code-server --install-extension thenestruo.dark-minus-theme
-RUN code-server --install-extension ms-toolsai.jupyter
-
 # --- Expose Port ---
 EXPOSE ${CODE_SERVER_PORT}
 
