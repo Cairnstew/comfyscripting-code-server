@@ -46,4 +46,4 @@ RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
-CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "--auth", "password"]
+CMD code-server --bind-addr 0.0.0.0:8080 --auth password

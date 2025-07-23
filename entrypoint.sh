@@ -122,6 +122,6 @@ else
     echo "[entry.sh] PATH: $PATH"
 
     echo "[entry.sh] Running container as user ID $USER_ID..."
-    sudo --set-home --preserve-env=PATH --user "#$USER_ID" "$@"
+    sudo --set-home --preserve-env=PATH --preserve-env=PASSWORD --user "#$USER_ID" "$@"
 fi
 
