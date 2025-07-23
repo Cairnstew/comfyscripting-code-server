@@ -67,7 +67,6 @@ ComfyUI will be available at `http://localhost:8188`.
 ## Customization
 - **Custom Nodes**: Add nodes to `./custom_nodes`. Requirements are installed if a `requirements.txt` is present.
 - **Models**: Place models in subdirectories under `./models` (e.g., `checkpoints`, `loras`).
-- **Extensions**: Install additional code-server extensions by modifying the `Dockerfile` (...or in the code server webui).
 
 ## Notes
 - ComfyUI must be started manually via `start-comfyui.sh` inside the container.
