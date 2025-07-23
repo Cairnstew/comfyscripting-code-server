@@ -54,23 +54,36 @@ done
 # --- PRE-START LOGIC ---
 echo "[wrapper] Checking for ComfyScript node..."
 
-# Save current directory
 ORIGINAL_DIR="$(pwd)"
 
-# Navigate to the target directory
-cd ComfyUI/custom_nodes
-
 # Clone only if it doesn't exist
-if [ ! -d "ComfyScript" ]; then
-    git clone https://github.com/Chaoses-Ib/ComfyScript.git
-    cd ComfyScript
-    python -m pip install -e ".[default]"
+if [ ! -d "/opt/comfyui/custom_nodes/ComfyScript" ]; then
+    echo "[entry.sh] Cloning ComfyScript..."
+    git clone https://github.com/Chaoses-Ib/ComfyScript.git /opt/comfyui/custom_nodes/ComfyScript
 else
-    echo "ComfyScript already exists, skipping clone and install."
+    echo "[entry.sh] ComfyScript directory already exists."
 fi
 
-# Return to original directory
-cd "$ORIGINAL_DIR"
+# Check if comfy_script module is available
+if ! python -c "import comfy_script" &>/dev/null; then
+    echo "[entry.sh] comfy_script module not found, installing..."
+    cd /opt/comfyui/custom_nodes/ComfyScript
+    python -m pip install -e ".[default]"
+    cd "$ORIGINAL_DIR"
+else
+    echo "[entry.sh] comfy_script module already available, skipping install."
+fi
+
+
+# Check if the 'comfy' module is installed
+echo "[wrapper] Checking if 'comfy' Python package is installed..."
+if python -c "import comfy" &> /dev/null; then
+    echo "[wrapper] 'comfy' package is installed."
+else
+    echo "[wrapper] ERROR: 'comfy' package is NOT installed."
+    # Optional: exit with error or install it
+    # exit 1
+fi
 
 # Under normal circumstances, the container would be run as the root user, which is not ideal, because the files that are created by the container in
 # the volumes mounted from the host, i.e., custom nodes and models downloaded by the ComfyUI Manager, are owned by the root user; the user can specify
@@ -114,14 +127,34 @@ else
         useradd --uid "$USER_ID" --gid "$GROUP_ID" --create-home comfyui-user
     fi
 
-    echo "[entry.sh] Changing ownership of /opt/comfyui and /opt/comfyui-manager..."
-    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui
-    chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui-manager
-    chown --recursive "$USER_ID:$GROUP_ID" /opt/code-server
+    for DIR in /opt/comfyui /opt/comfyui-manager /opt/code-server; do
+        CURRENT_UID=$(stat -c "%u" "$DIR")
+        CURRENT_GID=$(stat -c "%g" "$DIR")
 
-    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension ms-python.python
-    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension thenestruo.dark-minus-theme
-    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension ms-toolsai.jupyter
+        if [ "$CURRENT_UID" -eq "$USER_ID" ] && [ "$CURRENT_GID" -eq "$GROUP_ID" ]; then
+            echo "[entry.sh] Ownership of $DIR is already correct. Skipping chown."
+        else
+            echo "[entry.sh] Changing ownership of $DIR to $USER_ID:$GROUP_ID..."
+            chown --recursive "$USER_ID:$GROUP_ID" "$DIR"
+        fi
+    done
+
+    # Define extensions
+    EXTENSIONS=(
+    ms-python.python
+    thenestruo.dark-minus-theme
+    ms-toolsai.jupyter
+    )
+
+    # Loop through each extension and install only if not present
+    for EXT in "${EXTENSIONS[@]}"; do
+    if sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --list-extensions | grep -q "^$EXT$"; then
+        echo "[entry.sh] Extension '$EXT' already installed, skipping."
+    else
+        echo "[entry.sh] Installing extension '$EXT'..."
+        sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension "$EXT"
+    fi
+    done
 
     export PATH=$PATH:/home/comfyui-user/.local/bin
     echo "[entry.sh] PATH: $PATH"
