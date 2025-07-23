@@ -117,6 +117,11 @@ else
     echo "[entry.sh] Changing ownership of /opt/comfyui and /opt/comfyui-manager..."
     chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui
     chown --recursive "$USER_ID:$GROUP_ID" /opt/comfyui-manager
+    chown --recursive "$USER_ID:$GROUP_ID" /opt/code-server
+
+    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension ms-python.python
+    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension thenestruo.dark-minus-theme
+    sudo --set-home --preserve-env=PATH --user "#$USER_ID" code-server --install-extension ms-toolsai.jupyter
 
     export PATH=$PATH:/home/comfyui-user/.local/bin
     echo "[entry.sh] PATH: $PATH"
